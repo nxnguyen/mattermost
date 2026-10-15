@@ -205,10 +205,10 @@ var config = {
         // Generate manifest.json, honouring any configured publicPath. This also handles injecting
         // <link rel="apple-touch-icon" ... /> and <meta name="apple-*" ... /> tags into root.html.
         new WebpackPwaManifest({
-            name: 'Mattermost',
-            short_name: 'Mattermost',
+            name: 'Amobi Collab',
+            short_name: 'Amobi Collab',
             start_url: '..',
-            description: 'Mattermost is an open source, self-hosted Slack-alternative',
+            description: 'Amobi Collab collaboration platform',
             background_color: '#ffffff',
             inject: true,
             ios: true,
