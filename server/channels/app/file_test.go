@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -805,6 +806,111 @@ func TestExtractContentFromFileInfoSearchText(t *testing.T) {
 			assert.Equal(t, []byte(tc.content), original, "extraction must not modify the original file")
 		})
 	}
+}
+
+func TestExtractContentFromFileInfoFullTextLimit(t *testing.T) {
+	mainHelper.Parallel(t)
+	th := Setup(t).InitBasic(t)
+	var content strings.Builder
+	for i := 0; content.Len() < maxContentExtractionSize; i++ {
+		fmt.Fprintf(&content, "lexeme%06d ", i)
+	}
+	path := model.NewId() + "/large.txt"
+	_, appErr := th.App.WriteFile(strings.NewReader(content.String()), path)
+	require.Nil(t, appErr)
+	fileInfo, err := th.App.Srv().Store().FileInfo().Save(th.Context, &model.FileInfo{
+		CreatorId: th.BasicUser.Id,
+		PostId:    th.BasicPost.Id,
+		ChannelId: th.BasicPost.ChannelId,
+		Name:      "large.txt",
+		Path:      path,
+		Extension: "txt",
+		MimeType:  "text/plain",
+		Size:      int64(content.Len()),
+	})
+	require.NoError(t, err)
+
+	// Unique lexemes make the tsvector exceed its limit even below the text cap.
+	err = th.App.Srv().Store().FileInfo().SetContent(th.Context, fileInfo.Id, content.String()[:maxContentExtractionSize])
+	var pgErr *pq.Error
+	require.ErrorAs(t, err, &pgErr)
+	require.Equal(t, pq.ErrorCode("54000"), pgErr.Code)
+	require.Contains(t, pgErr.Message, "string is too long for tsvector")
+	unchanged, err := th.App.Srv().Store().FileInfo().GetFromMaster(fileInfo.Id)
+	require.NoError(t, err)
+	require.Empty(t, unchanged.Content, "the rejected update must be atomic")
+
+	require.NoError(t, th.App.ExtractContentFromFileInfo(th.Context, fileInfo))
+
+	stored, err := th.App.Srv().Store().FileInfo().GetFromMaster(fileInfo.Id)
+	require.NoError(t, err)
+	assert.Equal(t, content.String()[:maxContentExtractionSize/2], stored.Content)
+	assert.Equal(t, fileInfo.Name, stored.Name)
+	assert.Equal(t, fileInfo.Path, stored.Path)
+	assert.Equal(t, fileInfo.Size, stored.Size)
+	original, appErr := th.App.ReadFile(path)
+	require.Nil(t, appErr)
+	assert.Equal(t, []byte(content.String()), original)
+	results, _, appErr := th.App.SearchFilesInTeamForUser(th.Context, "lexeme000000", th.BasicUser.Id, th.BasicTeam.Id, false, false, 0, 0, 60)
+	require.Nil(t, appErr)
+	assert.Contains(t, results.Order, fileInfo.Id, "reduced text must remain searchable")
+}
+
+func TestExtractContentFromFileInfoContentRetry(t *testing.T) {
+	mainHelper.Parallel(t)
+	th := SetupWithStoreMock(t)
+	fileStore := &storemocks.FileInfoStore{}
+	th.App.Srv().Store().(*storemocks.Store).On("FileInfo").Return(fileStore)
+	limitErr := fmt.Errorf("wrapped store error: %w", &pq.Error{Code: "54000", Message: "string is too long for tsvector (max 1048575 bytes)"})
+	otherLimitErr := &pq.Error{Code: "54000", Message: "statement is too complex"}
+	encodingErr := &pq.Error{Code: "22021", Message: "invalid byte sequence for encoding UTF8"}
+	connectionErr := errors.New("database connection failed")
+	unicodeBoundary := strings.Repeat("a", maxContentExtractionSize/2-1) + "€" + strings.Repeat("a", maxContentExtractionSize/2-2)
+	for _, tc := range []struct {
+		name      string
+		content   string
+		responses []error
+		wantSizes []int
+		wantError error
+	}{
+		{name: "success does not retry", content: "text", responses: []error{nil}, wantSizes: []int{4}},
+		{name: "wrapped tsvector limit retries", content: strings.Repeat("a", maxContentExtractionSize), responses: []error{limitErr, nil}, wantSizes: []int{maxContentExtractionSize, maxContentExtractionSize / 2}},
+		{name: "retries stop at floor", content: strings.Repeat("a", maxContentExtractionSize), responses: []error{limitErr, limitErr, limitErr, limitErr, limitErr}, wantSizes: []int{maxContentExtractionSize, maxContentExtractionSize / 2, maxContentExtractionSize / 4, maxContentExtractionSize / 8, 64 * 1024}, wantError: limitErr},
+		{name: "small content tries the floor", content: strings.Repeat("a", 100*1024), responses: []error{limitErr, nil}, wantSizes: []int{100 * 1024, 64 * 1024}},
+		{name: "floor does not retry", content: strings.Repeat("a", 64*1024), responses: []error{limitErr}, wantSizes: []int{64 * 1024}, wantError: limitErr},
+		{name: "smaller content does not retry", content: "text", responses: []error{limitErr}, wantSizes: []int{4}, wantError: limitErr},
+		{name: "other program limit does not retry", content: strings.Repeat("a", maxContentExtractionSize), responses: []error{otherLimitErr}, wantSizes: []int{maxContentExtractionSize}, wantError: otherLimitErr},
+		{name: "encoding error does not retry", content: strings.Repeat("a", maxContentExtractionSize), responses: []error{encodingErr}, wantSizes: []int{maxContentExtractionSize}, wantError: encodingErr},
+		{name: "connection error does not retry", content: strings.Repeat("a", maxContentExtractionSize), responses: []error{connectionErr}, wantSizes: []int{maxContentExtractionSize}, wantError: connectionErr},
+		{name: "retry preserves UTF-8", content: unicodeBoundary, responses: []error{limitErr, nil}, wantSizes: []int{maxContentExtractionSize, maxContentExtractionSize/2 - 1}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fileInfo := &model.FileInfo{Id: model.NewId(), Name: "retry.txt", Path: model.NewId() + "/retry.txt", MimeType: "text/plain", PostId: model.NewId()}
+			_, appErr := th.App.WriteFile(strings.NewReader(tc.content), fileInfo.Path)
+			require.Nil(t, appErr)
+			var sizes []int
+			for _, response := range tc.responses {
+				fileStore.On("SetContent", mock.Anything, fileInfo.Id, mock.Anything).Run(func(args mock.Arguments) {
+					text := args.String(2)
+					sizes = append(sizes, len(text))
+					assert.True(t, utf8.ValidString(text))
+					assert.True(t, strings.HasPrefix(tc.content, text))
+				}).Return(response).Once()
+			}
+			if tc.wantError == nil {
+				fileStore.On("Get", fileInfo.Id).Return(fileInfo, nil).Once()
+				fileStore.On("InvalidateFileInfosForPostCache", fileInfo.PostId, false).Once()
+			}
+			err := th.App.ExtractContentFromFileInfo(th.Context, fileInfo)
+			if tc.wantError == nil {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.wantSizes, sizes)
+		})
+	}
+	fileStore.AssertExpectations(t)
 }
 
 func TestGetLastAccessibleFileTime(t *testing.T) {

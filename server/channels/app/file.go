@@ -49,6 +49,7 @@ const (
 	jpegEncQuality             = 90
 	maxUploadInitialBufferSize = 1024 * 1024 // 1MB
 	maxContentExtractionSize   = 1024 * 1024 // 1MB
+	minContentRetrySize        = 64 * 1024
 )
 
 func (a *App) FileBackend() filestore.FileBackend {
@@ -1743,8 +1744,22 @@ func (a *App) ExtractContentFromFileInfo(rctx request.CTX, fileInfo *model.FileI
 		if len(text) > maxContentExtractionSize {
 			text = strings.ToValidUTF8(text[:maxContentExtractionSize], "")
 		}
-		if storeErr := a.Srv().Store().FileInfo().SetContent(rctx, fileInfo.Id, text); storeErr != nil {
-			return errors.Wrap(storeErr, "failed to save the extracted file content")
+		// A tsvector can exceed the text size. Halving from 1 MiB to 64 KiB
+		// bounds this to five attempts while preserving a searchable prefix.
+		for {
+			storeErr := a.Srv().Store().FileInfo().SetContent(rctx, fileInfo.Id, text)
+			if storeErr == nil {
+				break
+			}
+			var pgErr interface {
+				error
+				SQLState() string
+			}
+			if len(text) <= minContentRetrySize || !errors.As(storeErr, &pgErr) || pgErr.SQLState() != "54000" ||
+				!strings.Contains(pgErr.Error(), "string is too long for tsvector") {
+				return errors.Wrap(storeErr, "failed to save the extracted file content")
+			}
+			text = strings.ToValidUTF8(text[:max(len(text)/2, minContentRetrySize)], "")
 		}
 		reloadFileInfo, storeErr := a.Srv().Store().FileInfo().Get(fileInfo.Id)
 		if storeErr != nil {
