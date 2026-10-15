@@ -1737,9 +1737,11 @@ func (a *App) ExtractContentFromFileInfo(rctx request.CTX, fileInfo *model.FileI
 	if err != nil {
 		return errors.Wrap(err, "failed to extract file content")
 	}
+	// PostgreSQL text cannot contain NULs or invalid UTF-8 from an extractor.
+	text = strings.ToValidUTF8(strings.ReplaceAll(text, "\x00", ""), "\uFFFD")
 	if text != "" {
 		if len(text) > maxContentExtractionSize {
-			text = text[0:maxContentExtractionSize]
+			text = strings.ToValidUTF8(text[:maxContentExtractionSize], "")
 		}
 		if storeErr := a.Srv().Store().FileInfo().SetContent(rctx, fileInfo.Id, text); storeErr != nil {
 			return errors.Wrap(storeErr, "failed to save the extracted file content")

@@ -12,8 +12,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -733,6 +735,76 @@ func TestExtractContentFromFileInfo(t *testing.T) {
 
 	// Test that we don't process images.
 	require.NoError(t, app.ExtractContentFromFileInfo(request.TestContext(t), fi))
+}
+
+func TestExtractContentFromFileInfoSearchText(t *testing.T) {
+	mainHelper.Parallel(t)
+	th := Setup(t).InitBasic(t)
+	// Put malformed bytes past the plain extractor's initial text probe.
+	prefix := strings.Repeat("a", 1026)
+	for _, tc := range []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{
+			name:    "preserves valid Unicode",
+			content: prefix + "Tiếng Việt\n€",
+			want:    prefix + "Tiếng Việt\n€",
+		},
+		{
+			name:    "removes NUL",
+			content: prefix + "Tiếng\x00 Việt\ntail",
+			want:    prefix + "Tiếng Việt\ntail",
+		},
+		{
+			name:    "replaces invalid UTF-8",
+			content: prefix + "Tiếng\xa0 Việt\ntail",
+			want:    prefix + "Tiếng\uFFFD Việt\ntail",
+		},
+		{
+			name:    "normalizes NUL and malformed sequences",
+			content: prefix + "Tiếng\x00\xa0\xa1 Việt\xe2\x82\ntail",
+			want:    prefix + "Tiếng\uFFFD Việt\uFFFD\ntail",
+		},
+		{
+			name:    "bounds normalized content without splitting Unicode",
+			content: prefix + strings.Repeat("\xa0x", (maxContentExtractionSize-len(prefix))/2),
+			want:    prefix + strings.Repeat("\uFFFDx", (maxContentExtractionSize-len(prefix))/4),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := model.NewId() + "/content.txt"
+			_, appErr := th.App.WriteFile(strings.NewReader(tc.content), path)
+			require.Nil(t, appErr)
+			fileInfo, err := th.App.Srv().Store().FileInfo().Save(th.Context, &model.FileInfo{
+				CreatorId: th.BasicUser.Id,
+				PostId:    th.BasicPost.Id,
+				ChannelId: th.BasicPost.ChannelId,
+				Name:      "content.txt",
+				Path:      path,
+				Extension: "txt",
+				MimeType:  "text/plain",
+				Size:      int64(len(tc.content)),
+			})
+			require.NoError(t, err)
+
+			require.NoError(t, th.App.ExtractContentFromFileInfo(th.Context, fileInfo))
+
+			stored, err := th.App.Srv().Store().FileInfo().GetFromMaster(fileInfo.Id)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, stored.Content)
+			assert.True(t, utf8.ValidString(stored.Content))
+			assert.NotContains(t, stored.Content, "\x00")
+			assert.LessOrEqual(t, len(stored.Content), maxContentExtractionSize)
+			assert.Equal(t, fileInfo.Name, stored.Name)
+			assert.Equal(t, fileInfo.Path, stored.Path)
+			assert.Equal(t, fileInfo.Size, stored.Size)
+			original, appErr := th.App.ReadFile(path)
+			require.Nil(t, appErr)
+			assert.Equal(t, []byte(tc.content), original, "extraction must not modify the original file")
+		})
+	}
 }
 
 func TestGetLastAccessibleFileTime(t *testing.T) {
