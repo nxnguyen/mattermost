@@ -144,6 +144,11 @@ this is long text this is long text this is long text this is long text this is 
 
             {name: 'link to a plugin-handled path', link: 'http://localhost/plugins/example', handled: false}, {name: 'link to a file attachment public link', link: 'http://localhost/files/o6eujqkmjfd138ykpzmsmc131y/public?h=j5nPX8JlgUeNVMOB3dLXwyG_jlxlSw4nSgZmegXfpHw', handled: false},
 
+            {name: 'legacy Boards card link', link: 'http://localhost/boards/team/team/board?c=card', handled: false},
+            {name: 'relative legacy Boards card link', link: '/boards/team/team/board?c=card', handled: false},
+            {name: 'canonical Boards card link', link: 'http://localhost/boards/team/team/board/view/card', handled: false},
+            {name: 'similarly named channel team', link: 'http://localhost/boards-team/channels/town-square', handled: true},
+
             {name: 'relative link to a plugin-handled path', link: '/plugins/example', handled: false}, {name: 'relative link to a file attachment public link', link: '/files/o6eujqkmjfd138ykpzmsmc131y/public?h=j5nPX8JlgUeNVMOB3dLXwyG_jlxlSw4nSgZmegXfpHw', handled: false},
 
             {name: 'link to a managed resource', link: 'http://localhost/trusted/jitsi', options: {managedResourcePaths: ['trusted']}, handled: false}, {name: 'relative link to a managed resource', link: '/trusted/jitsi', options: {managedResourcePaths: ['trusted']}, handled: false}, {name: 'link that is not to a managed resource', link: 'http://localhost/trusted/jitsi', options: {managedResourcePaths: ['jitsi']}, handled: true},
@@ -159,6 +164,7 @@ this is long text this is long text this is long text this is long text this is 
                     expect(output).not.toContain('target="_blank"');
                 } else {
                     expect(output).toContain('rel="noreferrer" target="_blank"');
+                    expect(output).not.toContain('data-link=');
                 }
             });
         }

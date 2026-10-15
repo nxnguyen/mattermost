@@ -250,6 +250,11 @@ export function shouldOpenInNewTab(url: string, siteURL?: string, managedResourc
 
     const path = url.startsWith('/') ? url : url.substring(siteURL?.length || 0);
 
+    // Boards has its own router; a full navigation also preserves server-side card redirects.
+    if ((/^\/boards(?:\/|[?#]|$)/).test(path)) {
+        return true;
+    }
+
     const unhandledPaths = [
 
         // Paths managed by plugins and public file links aren't handled by the web app
