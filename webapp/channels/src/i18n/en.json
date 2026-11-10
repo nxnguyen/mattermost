@@ -108,7 +108,7 @@
     "description": "Link text in the About Mattermost dialog footer pointing to the terms of use ('Terms of Use')."
   },
   "about.version": {
-    "defaultMessage": "Mattermost Version:",
+    "defaultMessage": "Amobi Collab Version:",
     "description": "Field label in the About Mattermost dialog; the Mattermost version number follows the colon."
   },
   "access_history.title": {
@@ -17211,6 +17211,22 @@
     "defaultMessage": "Close",
     "description": "Accessibility label for the X button that dismisses an alert banner."
   },
+  "amobi.document_preview.preview": {
+    "defaultMessage": "Preview",
+    "description": ""
+  },
+  "amobi.document_preview.source": {
+    "defaultMessage": "Source",
+    "description": ""
+  },
+  "amobi.document_preview.unavailable": {
+    "defaultMessage": "This document could not be previewed. Preview supports files up to 500 KB.",
+    "description": ""
+  },
+  "amobi.git.menu": {
+    "defaultMessage": "Git repositories",
+    "description": ""
+  },
   "analytics.chart.loading": {
     "defaultMessage": "Loading...",
     "description": "Loading placeholder shown in statistics charts and counters on the admin console analytics pages."
@@ -18524,7 +18540,7 @@
     "description": ""
   },
   "call_options.audio_sub": {
-    "defaultMessage": "Mattermost Call",
+    "defaultMessage": "Amobi Collab Call",
     "description": ""
   },
   "call_options.phone": {
@@ -23144,7 +23160,7 @@
     "description": "Main heading (h1) of the landing page asking the user to choose between viewing the link in the app or the browser."
   },
   "get_app.openingLink": {
-    "defaultMessage": "Opening link in Mattermost...",
+    "defaultMessage": "Opening link in Amobi Collab...",
     "description": "Heading shown on the landing page while a link is being handed off to the Mattermost desktop app; 'Mattermost' is the product name."
   },
   "get_app.openingLinkWhiteLabel": {
@@ -30156,7 +30172,7 @@
     "description": "Link at the top of the signup page taking existing users to the login page; 'Log in' is a verb phrase."
   },
   "signup_user_completed.subtitle": {
-    "defaultMessage": "Create your Mattermost account to start collaborating with your team",
+    "defaultMessage": "Create your Amobi Collab account to start collaborating with your team",
     "description": "Subtitle under the signup page heading."
   },
   "signup_user_completed.title": {
@@ -34162,5 +34178,10 @@
   "youtube_video.thumbnail.alt_text": {
     "defaultMessage": "Thumbnail for {videoTitle} on YouTube",
     "description": "Alt text for the thumbnail image of an embedded YouTube video; {videoTitle} is the video's title."
-  }
+  },
+  "amobi.about.description": "Team chat, projects and collaboration in one place.",
+  "amobi.about.copyright": "Amobi Collab · {currentYear}",
+  "amobi.about.notices": "Open source licenses and notices",
+  "amobi.about.notice": "Amobi Collab uses open source software in its <linkServer>server</linkServer>, <linkDesktop>desktop</linkDesktop> and <linkMobile>mobile</linkMobile> apps.",
+  "amobi.onboarding.welcome": "Welcome to Amobi Collab"
 }

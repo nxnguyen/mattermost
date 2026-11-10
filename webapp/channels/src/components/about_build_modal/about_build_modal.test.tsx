@@ -77,15 +77,15 @@ describe('components/AboutBuildModal', () => {
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Server Version: 3.6.0');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Database Schema Version: 77');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Build Number: 123456');
-        expect(screen.getByText('Mattermost Entry')).toBeInTheDocument();
-        expect(screen.getByText('Modern communication from behind your firewall.')).toBeInTheDocument();
-        expect(screen.getByRole('link', {name: 'mattermost.com'})).toHaveAttribute('href', 'https://mattermost.com/?utm_source=mattermost&utm_medium=in-product&utm_content=about_build_modal&uid=&sid=&edition=enterprise&server_version=3.6.0');
+        expect(screen.getByText('Amobi Collab')).toBeInTheDocument();
+        expect(screen.getByText('Team chat, projects and collaboration in one place.')).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: 'Open source licenses and notices'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
         expect(screen.getByText('EE Build Hash: 0123456789abcdef', {exact: false})).toBeInTheDocument();
         expect(screen.queryByText('Hostname: mock.localhost', {exact: false})).toBeInTheDocument();
 
-        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', 'https://github.com/mattermost/desktop/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt');
+        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
     });
 
     test('should match snapshot for team edition', () => {
@@ -99,15 +99,15 @@ describe('components/AboutBuildModal', () => {
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Server Version: 3.6.0');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Database Schema Version: 77');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Build Number: 123456');
-        expect(screen.getByText('Mattermost Team Edition')).toBeInTheDocument();
-        expect(screen.getByText('All your team communication in one place, instantly searchable and accessible anywhere.')).toBeInTheDocument();
-        expect(screen.getByRole('link', {name: 'mattermost.com/community/'})).toHaveAttribute('href', 'https://mattermost.com/community/?utm_source=mattermost&utm_medium=in-product&utm_content=about_build_modal&uid=&sid=&edition=team&server_version=3.6.0');
+        expect(screen.getByText('Amobi Collab')).toBeInTheDocument();
+        expect(screen.getByText('Team chat, projects and collaboration in one place.')).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: 'Open source licenses and notices'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
         expect(screen.queryByText('EE Build Hash: 0123456789abcdef')).not.toBeInTheDocument();
         expect(screen.queryByText('Hostname: disconnected', {exact: false})).toBeInTheDocument();
 
-        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', 'https://github.com/mattermost/desktop/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt');
+        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
     });
 
     test('should match snapshot for cloud edition', () => {
@@ -125,9 +125,9 @@ describe('components/AboutBuildModal', () => {
             />,
         );
 
-        expect(screen.getByText('Mattermost Cloud')).toBeInTheDocument();
+        expect(screen.getByText('Amobi Collab Cloud')).toBeInTheDocument();
         expect(screen.getByText('High-trust messaging for the enterprise')).toBeInTheDocument();
-        expect(screen.getByTestId('aboutModalVersion')).toHaveTextContent('Mattermost Version: 3.6.0');
+        expect(screen.getByTestId('aboutModalVersion')).toHaveTextContent('Amobi Collab Version: 3.6.0');
         expect(screen.getByText('0123456789abcdef', {exact: false})).toBeInTheDocument();
         expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt');
         expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', 'https://github.com/mattermost/desktop/blob/master/NOTICE.txt');
@@ -149,15 +149,15 @@ describe('components/AboutBuildModal', () => {
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Server Version: dev');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Database Schema Version: 77');
         expect(screen.getByTestId('aboutModalVersionInfo')).toHaveTextContent('Build Number: n/a');
-        expect(screen.getByText('Mattermost Team Edition')).toBeInTheDocument();
-        expect(screen.getByText('All your team communication in one place, instantly searchable and accessible anywhere.')).toBeInTheDocument();
-        expect(screen.getByRole('link', {name: 'mattermost.com/community/'})).toHaveAttribute('href', 'https://mattermost.com/community/?utm_source=mattermost&utm_medium=in-product&utm_content=about_build_modal&uid=&sid=&edition=team&server_version=dev');
+        expect(screen.getByText('Amobi Collab')).toBeInTheDocument();
+        expect(screen.getByText('Team chat, projects and collaboration in one place.')).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: 'Open source licenses and notices'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
         expect(screen.queryByText('EE Build Hash: 0123456789abcdef')).not.toBeInTheDocument();
         expect(screen.queryByText('Hostname: server did not provide hostname', {exact: false})).toBeInTheDocument();
 
-        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', 'https://github.com/mattermost/desktop/blob/master/NOTICE.txt');
-        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', 'https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt');
+        expect(screen.getByRole('link', {name: 'server'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'desktop'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.getByRole('link', {name: 'mobile'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
     });
 
     test('should call onExited callback when the modal is hidden', async () => {
@@ -190,36 +190,14 @@ describe('components/AboutBuildModal', () => {
         expect(onExited).toHaveBeenCalledTimes(1);
     });
 
-    test('should show default tos and privacy policy links and not the config links', () => {
-        const state = {
-            entities: {
-                general: {
-                    config,
-                    license: {
-                        Cloud: 'false',
-                    },
-                },
-                users: {
-                    currentUserId: 'currentUserId',
-                },
-            },
-        };
-        renderWithContext(
-            <AboutBuildModal
-                config={config}
-                license={license}
-                socketStatus={socketStatus}
-                onExited={jest.fn()}
-            />,
-            state,
-        );
-
-        expect(screen.getByRole('link', {name: 'Terms of Use'})).toHaveAttribute('href', `${AboutLinks.TERMS_OF_SERVICE}?utm_source=mattermost&utm_medium=in-product&utm_content=about_build_modal&uid=currentUserId&sid=&edition=enterprise&server_version=3.6.0`);
-
-        expect(screen.getByRole('link', {name: 'Privacy Policy'})).toHaveAttribute('href', `${AboutLinks.PRIVACY_POLICY}?utm_source=mattermost&utm_medium=in-product&utm_content=about_build_modal&uid=currentUserId&sid=&edition=enterprise&server_version=3.6.0`);
-
-        expect(screen.getByRole('link', {name: 'Terms of Use'})).not.toHaveAttribute('href', config?.TermsOfServiceLink);
-        expect(screen.getByRole('link', {name: 'Privacy Policy'})).not.toHaveAttribute('href', config?.PrivacyPolicyLink);
+    test('shows Amobi notices without upstream product marketing', () => {
+        renderAboutBuildModal({config, license, socketStatus});
+        expect(screen.getByText('Amobi Collab')).toBeVisible();
+        expect(screen.getByRole('img', {name: 'Amobi Collab'})).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: 'Open source licenses and notices'})).toHaveAttribute('href', '/static/amobi-open-source-notices.txt');
+        expect(screen.queryByText(/Team Edition/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Join the Mattermost community/)).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', {name: 'Terms of Use'})).not.toBeInTheDocument();
     });
 
     test('should show load metric when license is loaded and API returns data', async () => {

@@ -6260,6 +6260,11 @@
     "description": "Login error when a bot account attempts to sign in through an OAuth SSO provider."
   },
   {
+    "id": "api.user.login_by_oauth.google_email_not_allowed.app_error",
+    "translation": "This Google email is not on Amobi Collab's allowed list. Sign in with an approved account or contact your administrator to request access.",
+    "description": "Shown on the Google sign-in error page when a verified Google email is absent from the system allowlist. Do not expose other allowed email addresses."
+  },
+  {
     "id": "api.user.login_by_oauth.not_available.app_error",
     "translation": "{{.Service}} SSO through OAuth 2.0 not available on this server.",
     "description": "Login error; {{.Service}} is the OAuth provider name (e.g. GitLab, Google) that is not enabled on this server."

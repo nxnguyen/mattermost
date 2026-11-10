@@ -5,6 +5,7 @@ import React, {useEffect} from 'react';
 import {useIntl} from 'react-intl';
 import {useDispatch, useSelector} from 'react-redux';
 
+import {SourceBranchIcon} from '@mattermost/compass-icons/components';
 import type {ProductIdentifier} from '@mattermost/types/products';
 
 import {getPrevTrialLicense} from 'mattermost-redux/actions/admin';
@@ -115,6 +116,15 @@ export function SwitchProductMenu(props: Props) {
                 currentProductID={props.productId}
             />
             <ProductSwitcherPluginMenuItems/>
+            <Menu.Item
+                leadingElement={<SourceBranchIcon size={18}/>}
+                labels={<span>{formatMessage({id: 'amobi.git.menu', defaultMessage: 'Git repositories'})}</span>}
+                onClick={() => window.open(
+                    'https://git.152.42.230.207.sslip.io/amobi/',
+                    '_blank',
+                    'noopener,noreferrer',
+                )}
+            />
             <Menu.Separator/>
             <ProductSwitcherCloudTrialMenuItem
                 isUserAdmin={isUserAdmin}

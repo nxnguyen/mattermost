@@ -72,7 +72,7 @@ describe('SwitchProductMenu', () => {
 
         await userEvent.click(screen.getByRole('button', {name: 'Open product menu'}));
 
-        await userEvent.click(screen.getByText('About Mattermost'));
+        await userEvent.click(screen.getByText('About Amobi Collab'));
 
         // The menu defers item actions until its close animation finishes.
         await waitFor(() => {
@@ -83,4 +83,32 @@ describe('SwitchProductMenu', () => {
             expect(openedAboutModal).toBe(true);
         });
     });
+    test('opens the Git organization without inventing a project repository', async () => {
+        const open = jest.spyOn(window, 'open').mockImplementation(() => null);
+        try {
+            renderWithContext(<SwitchProductMenu productId={null}/>, {
+                ...initialState,
+                entities: {
+                    ...initialState.entities,
+                    teams: {
+                        currentTeamId: 'team_id',
+                        teams: {team_id: TestHelper.getTeamMock({id: 'team_id', name: 'bitrix-48'})},
+                    },
+                },
+            });
+            await userEvent.click(screen.getByRole('button', {name: 'Open product menu'}));
+            expect(screen.getByRole('menuitem', {name: 'Git repositories'}).querySelector('svg')).toBeInTheDocument();
+            await userEvent.click(screen.getByText('Git repositories'));
+            await waitFor(() => {
+                expect(open).toHaveBeenCalledWith(
+                    'https://git.152.42.230.207.sslip.io/amobi/',
+                    '_blank',
+                    'noopener,noreferrer',
+                );
+            });
+        } finally {
+            open.mockRestore();
+        }
+    });
+
 });

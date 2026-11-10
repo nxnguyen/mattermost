@@ -12,6 +12,7 @@ import (
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/channels/utils"
 )
 
@@ -28,6 +29,11 @@ func (w *Web) InitSaml() {
 }
 
 func loginWithSaml(c *Context, w http.ResponseWriter, r *http.Request) {
+	if oauthgoogle.IsGoogleOnlyMode(c.App.Config()) {
+		c.Err = model.NewAppError("loginWithSaml", "api.user.saml.not_available.app_error", nil, "", http.StatusUnauthorized)
+		return
+	}
+
 	samlInterface := c.App.Saml()
 
 	if samlInterface == nil {
@@ -108,6 +114,11 @@ func loginWithSaml(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func completeSaml(c *Context, w http.ResponseWriter, r *http.Request) {
+	if oauthgoogle.IsGoogleOnlyMode(c.App.Config()) {
+		c.Err = model.NewAppError("completeSaml", "api.user.saml.not_available.app_error", nil, "", http.StatusUnauthorized)
+		return
+	}
+
 	samlInterface := c.App.Saml()
 
 	if samlInterface == nil {

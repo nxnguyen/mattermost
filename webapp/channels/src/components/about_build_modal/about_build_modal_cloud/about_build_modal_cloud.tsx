@@ -73,7 +73,7 @@ export default function AboutBuildModalCloud(props: Props) {
                 >
                     <FormattedMessage
                         id='about.title'
-                        values={{appTitle: config.SiteName || 'Mattermost'}}
+                        values={{appTitle: config.SiteName || 'Amobi Collab'}}
                         defaultMessage='About {appTitle}'
                     />
                 </Modal.Title>
@@ -85,14 +85,14 @@ export default function AboutBuildModalCloud(props: Props) {
                     </div>
                     <div>
                         <h3 className='about-modal__title'>
-                            <strong>{'Mattermost'} {title}</strong>
+                            <strong>{'Amobi Collab'} {title}</strong>
                         </h3>
                         <p className='subtitle'>{subTitle}</p>
                         <div className='description'>
                             <div data-testid='aboutModalVersion'>
                                 <FormattedMessage
                                     id='about.version'
-                                    defaultMessage='Mattermost Version:'
+                                    defaultMessage='Amobi Collab Version:'
                                 />
                                 <span id='versionString'>{'\u00a0' + config.Version}</span>
                             </div>

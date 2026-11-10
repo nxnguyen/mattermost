@@ -875,6 +875,98 @@ func TestGetClientConfig(t *testing.T) {
 	}
 }
 
+func TestAmobiGoogleLoginCanBeEnabledWithoutMattermostLicense(t *testing.T) {
+	t.Setenv("AMOBI_GOOGLE_ALLOWED_EMAILS", "nguyennx@bachasoft.com")
+	t.Setenv("AMOBI_GOOGLE_ONLY", "false")
+
+	config := &model.Config{}
+	config.SetDefaults()
+	*config.GoogleSettings.Enable = true
+	*config.GoogleSettings.Id = "google-client-id"
+	*config.GoogleSettings.Secret = "google-client-secret"
+
+	props := GenerateClientConfig(config, "", nil)
+	assert.Equal(t, "true", props["EnableSignUpWithGoogle"])
+	assert.Equal(t, "false", props["EnableSignInWithEmail"])
+	assert.Equal(t, "false", props["EnableSignInWithUsername"])
+	assert.Equal(t, "false", props["EnableSignUpWithEmail"])
+	assert.Equal(t, "false", props["EnableSignUpWithGitLab"])
+	assert.Equal(t, "false", props["EnableSignUpWithOffice365"])
+	assert.Equal(t, "false", props["EnableSignUpWithOpenId"])
+	assert.Equal(t, "false", props["EnableLdap"])
+	assert.Equal(t, "false", props["EnableSaml"])
+	assert.Equal(t, "false", props["EnableGuestMagicLink"])
+	assert.Equal(t, "false", props["EnableOpenServer"])
+	assert.Equal(t, "false", props["PasswordEnableForgotLink"])
+}
+
+func TestAmobiGoogleLoginIsAvailableToUnauthenticatedClients(t *testing.T) {
+	t.Setenv("AMOBI_GOOGLE_ALLOWED_EMAILS", "nguyennx@bachasoft.com")
+	t.Setenv("AMOBI_GOOGLE_ONLY", "true")
+
+	config := &model.Config{}
+	config.SetDefaults()
+	*config.GoogleSettings.Enable = true
+	*config.GoogleSettings.Id = "google-client-id"
+	*config.GoogleSettings.Secret = "google-client-secret"
+
+	props := GenerateLimitedClientConfig(config, "", nil)
+	assert.Equal(t, "true", props["EnableSignUpWithGoogle"])
+	assert.Equal(t, "false", props["EnableSignInWithEmail"])
+	assert.Equal(t, "false", props["EnableSignInWithUsername"])
+	assert.Equal(t, "false", props["EnableSignUpWithEmail"])
+	assert.Equal(t, "false", props["EnableOpenServer"])
+}
+
+func TestAmobiGoogleLoginDoesNotAppearWithoutCredentialsOrAllowlist(t *testing.T) {
+	testCases := []struct {
+		name      string
+		allowlist string
+		clientID  string
+		secret    string
+	}{
+		{name: "missing allowlist", clientID: "google-client-id", secret: "google-client-secret"},
+		{name: "missing client ID", allowlist: "nguyennx@bachasoft.com", secret: "google-client-secret"},
+		{name: "missing client secret", allowlist: "nguyennx@bachasoft.com", clientID: "google-client-id"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("AMOBI_GOOGLE_ALLOWED_EMAILS", tc.allowlist)
+			t.Setenv("AMOBI_GOOGLE_ONLY", "false")
+
+			config := &model.Config{}
+			config.SetDefaults()
+			*config.GoogleSettings.Enable = true
+			*config.GoogleSettings.Id = tc.clientID
+			*config.GoogleSettings.Secret = tc.secret
+
+			props := GenerateClientConfig(config, "", nil)
+			assert.Equal(t, "false", props["EnableSignUpWithGoogle"])
+			assert.Equal(t, "true", props["EnableSignInWithEmail"])
+		})
+	}
+}
+
+func TestAmobiGoogleOnlyExplicitModeFailsClosedWithoutOAuthCredentials(t *testing.T) {
+	t.Setenv("AMOBI_GOOGLE_ALLOWED_EMAILS", "")
+	t.Setenv("AMOBI_GOOGLE_ONLY", "true")
+
+	config := &model.Config{}
+	config.SetDefaults()
+	props := GenerateClientConfig(config, "", nil)
+	assert.Equal(t, "false", props["EnableSignUpWithGoogle"])
+	assert.Equal(t, "false", props["EnableSignInWithEmail"])
+	assert.Equal(t, "false", props["EnableSignInWithUsername"])
+	assert.Equal(t, "false", props["EnableSignUpWithEmail"])
+	assert.Equal(t, "false", props["EnableOpenServer"])
+
+	limitedProps := GenerateLimitedClientConfig(config, "", nil)
+	assert.Equal(t, "false", limitedProps["EnableSignUpWithGoogle"])
+	assert.Equal(t, "false", limitedProps["EnableSignInWithEmail"])
+	assert.Equal(t, "false", limitedProps["EnableSignInWithUsername"])
+}
+
 func TestGenerateClientConfigLockProfileFieldsForEmailUsers(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		license  *model.License

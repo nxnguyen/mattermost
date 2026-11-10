@@ -5,10 +5,12 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/fips"
 )
 
@@ -277,6 +279,8 @@ func GenerateClientConfig(c *model.Config, telemetryID string, license *model.Li
 		}
 	}
 
+	applyAmobiGoogleLoginConfig(props, c)
+
 	return props
 }
 
@@ -453,8 +457,41 @@ func GenerateLimitedClientConfig(c *model.Config, telemetryID string, license *m
 	for key, value := range c.FeatureFlags.ToMap() {
 		props["FeatureFlag"+key] = value
 	}
+	applyAmobiGoogleLoginConfig(props, c)
 
 	return props
+}
+
+func applyAmobiGoogleLoginConfig(props map[string]string, c *model.Config) {
+	googleLoginConfigured := amobiGoogleLoginConfigured(c)
+	if googleLoginConfigured {
+		props["EnableSignUpWithGoogle"] = "true"
+	}
+
+	if oauthgoogle.IsGoogleOnlyMode(c) {
+		props["EnableSignInWithEmail"] = "false"
+		props["EnableSignInWithUsername"] = "false"
+		props["EnableSignUpWithEmail"] = "false"
+		props["EnableSignUpWithGitLab"] = "false"
+		props["EnableSignUpWithOffice365"] = "false"
+		props["EnableSignUpWithOpenId"] = "false"
+		props["EnableLdap"] = "false"
+		props["EnableSaml"] = "false"
+		props["EnableGuestMagicLink"] = "false"
+		props["EnableOpenServer"] = "false"
+		props["PasswordEnableForgotLink"] = "false"
+		props["EnableSignUpWithGoogle"] = strconv.FormatBool(googleLoginConfigured)
+	}
+}
+
+func amobiGoogleLoginConfigured(c *model.Config) bool {
+	if c == nil || !model.SafeDereference(c.GoogleSettings.Enable) {
+		return false
+	}
+	if strings.TrimSpace(model.SafeDereference(c.GoogleSettings.Id)) == "" || strings.TrimSpace(model.SafeDereference(c.GoogleSettings.Secret)) == "" {
+		return false
+	}
+	return oauthgoogle.HasAllowedEmails(os.Getenv(oauthgoogle.AllowedEmailsEnv))
 }
 
 func getGiphySdkKey(ss model.ServiceSettings) string {

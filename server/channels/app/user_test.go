@@ -24,6 +24,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/shared/request"
 	oauthgitlab "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/gitlab"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/channels/app/users"
 	"github.com/mattermost/mattermost/server/v8/channels/store"
 	storemocks "github.com/mattermost/mattermost/server/v8/channels/store/storetest/mocks"
@@ -100,6 +101,59 @@ func TestCreateOAuthUser(t *testing.T) {
 		_, err := th.App.CreateOAuthUser(th.Context, model.UserAuthServiceGitlab, strings.NewReader("{}"), "", "", nil)
 		require.NotNil(t, err, "should have failed - user creation disabled")
 	})
+}
+
+func TestLoginByOAuthLinksAllowlistedGoogleEmailUser(t *testing.T) {
+	th := Setup(t).InitBasic(t)
+	const email = "nguyennx@bachasoft.com"
+	t.Setenv(oauthgoogle.AllowedEmailsEnv, email)
+
+	localUser, appErr := th.App.CreateUser(th.Context, &model.User{
+		Username:  "google-login-" + model.NewId(),
+		Email:     email,
+		Password:  "Test-password-123!",
+		FirstName: "Existing Name",
+	})
+	require.Nil(t, appErr)
+
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.GoogleSettings.Enable = true
+		*cfg.TeamSettings.EnableUserCreation = false
+	})
+
+	userInfo := `{"sub":"google-sub-123","email":"nguyennx@bachasoft.com","email_verified":true,"name":"Nguyen Nguyen"}`
+	user, appErr := th.App.LoginByOAuth(th.Context, model.ServiceGoogle, strings.NewReader(userInfo), "", "", nil)
+	require.Nil(t, appErr)
+	require.Equal(t, localUser.Id, user.Id)
+	assert.Equal(t, model.ServiceGoogle, user.AuthService)
+	assert.Equal(t, "google-sub-123", user.GetAuthData())
+	assert.Equal(t, email, user.FirstName)
+	assert.Empty(t, user.LastName)
+	assert.Equal(t, email, user.GetDisplayName(model.ShowFullName))
+
+	updatedUser, appErr := th.App.GetUser(th.Context, localUser.Id)
+	require.Nil(t, appErr)
+	assert.Equal(t, model.ServiceGoogle, updatedUser.AuthService)
+	assert.Equal(t, "google-sub-123", updatedUser.GetAuthData())
+	assert.Empty(t, updatedUser.Password)
+}
+
+func TestLoginByOAuthGoogleEmailNotAllowed(t *testing.T) {
+	th := Setup(t).InitBasic(t)
+	t.Setenv(oauthgoogle.AllowedEmailsEnv, "nguyennx@bachasoft.com")
+	th.App.UpdateConfig(func(cfg *model.Config) {
+		*cfg.GoogleSettings.Enable = true
+		*cfg.TeamSettings.EnableUserCreation = false
+	})
+
+	user, appErr := th.App.LoginByOAuth(th.Context, model.ServiceGoogle,
+		strings.NewReader(`{"sub":"other-sub","email":"outside@bachasoft.com","email_verified":true}`), "", "", nil)
+	require.Nil(t, user)
+	require.NotNil(t, appErr)
+	assert.Equal(t, http.StatusForbidden, appErr.StatusCode)
+	assert.Equal(t, "api.user.login_by_oauth.google_email_not_allowed.app_error", appErr.Id)
+	assert.Contains(t, appErr.Message, "allowed list")
+	assert.NotContains(t, appErr.Message, "parse")
 }
 
 func TestUpdateDefaultProfileImage(t *testing.T) {

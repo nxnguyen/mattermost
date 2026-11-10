@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -628,6 +629,34 @@ func getFile(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer fileReader.Close()
+
+	if r.URL.Query().Get("amobi_preview") == "1" {
+		extension := strings.ToLower(fileInfo.Extension)
+		if (extension != "html" && extension != "htm") || fileInfo.Size > documentPreviewMaxBytes {
+			c.SetInvalidParam("amobi_preview")
+			return
+		}
+		body, previewErr := sandboxedHTML(fileReader)
+		if previewErr != nil {
+			c.SetInvalidParamWithErr("amobi_preview", previewErr)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Security-Policy", documentPreviewPolicy)
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), clipboard-read=(), clipboard-write=()")
+		w.Header().Del("Content-Disposition")
+		if r.Method != http.MethodHead {
+			if _, writeErr := w.Write(body); writeErr != nil {
+				c.Logger.Debug("Failed to write document preview", mlog.Err(writeErr))
+				return
+			}
+		}
+		auditRec.Success()
+		return
+	}
 
 	auditRec.Success()
 

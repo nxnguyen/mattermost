@@ -20,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 	"github.com/mattermost/mattermost/server/public/shared/request"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/channels/store"
 	"github.com/mattermost/mattermost/server/v8/channels/utils"
 )
@@ -95,6 +96,10 @@ func (a *App) AuthenticateUserForLogin(rctx request.CTX, id, loginId, password, 
 }
 
 func (a *App) GetUserForLogin(rctx request.CTX, id, loginId string) (*model.User, *model.AppError) {
+	if oauthgoogle.IsGoogleOnlyMode(a.Config()) {
+		return nil, model.NewAppError("GetUserForLogin", "store.sql_user.get_for_login.app_error", nil, "", http.StatusUnauthorized)
+	}
+
 	enableUsername := *a.Config().EmailSettings.EnableSignInWithUsername
 	enableEmail := *a.Config().EmailSettings.EnableSignInWithEmail
 

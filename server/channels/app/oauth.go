@@ -22,6 +22,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/shared/i18n"
 	"github.com/mattermost/mattermost/server/public/shared/mlog"
 	"github.com/mattermost/mattermost/server/public/shared/request"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/channels/app/platform"
 	"github.com/mattermost/mattermost/server/v8/channels/store"
 	"github.com/mattermost/mattermost/server/v8/channels/utils"
@@ -755,12 +756,16 @@ func (a *App) CompleteOAuth(rctx request.CTX, service string, body io.ReadCloser
 }
 
 func (a *App) getSSOProvider(service string) (einterfaces.OAuthProvider, *model.AppError) {
+	if oauthgoogle.IsGoogleOnlyMode(a.Config()) && service != model.ServiceGoogle {
+		return nil, model.NewAppError("getSSOProvider", "api.user.authorize_oauth_user.unsupported.app_error", nil, "service="+service, http.StatusUnauthorized)
+	}
+
 	sso := a.Config().GetSSOService(service)
 	if sso == nil || !*sso.Enable {
 		return nil, model.NewAppError("getSSOProvider", "api.user.authorize_oauth_user.unsupported.app_error", nil, "service="+service, http.StatusNotImplemented)
 	}
 	providerType := service
-	if strings.Contains(*sso.Scope, OpenIDScope) {
+	if service != model.ServiceGoogle && strings.Contains(*sso.Scope, OpenIDScope) {
 		providerType = model.ServiceOpenid
 	}
 	provider := einterfaces.GetOAuthProvider(providerType)
@@ -792,6 +797,10 @@ func (a *App) LoginByOAuth(rctx request.CTX, service string, userData io.Reader,
 
 	authUser, err := provider.GetUserFromJSON(rctx, bytes.NewReader(buf.Bytes()), tokenUser, settings)
 	if err != nil {
+		if service == model.ServiceGoogle && errors.Is(err, oauthgoogle.ErrEmailNotAllowed) {
+			return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.google_email_not_allowed.app_error",
+				nil, "", http.StatusForbidden)
+		}
 		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.parse.app_error",
 			map[string]any{"Service": service}, "", http.StatusBadRequest).Wrap(err)
 	}
@@ -804,7 +813,19 @@ func (a *App) LoginByOAuth(rctx request.CTX, service string, userData io.Reader,
 	user, appErr := a.GetUserByAuth(new(*authUser.AuthData), service)
 	if appErr != nil {
 		if appErr.Id == MissingAuthAccountError {
-			user, appErr = a.CreateOAuthUser(rctx, service, bytes.NewReader(buf.Bytes()), inviteToken, inviteId, tokenUser)
+			if service == model.ServiceGoogle {
+				user, appErr = a.linkGoogleOAuthUser(rctx, authUser)
+				if appErr == nil && user == nil {
+					user, appErr = a.CreateOAuthUser(rctx, service, bytes.NewReader(buf.Bytes()), inviteToken, inviteId, tokenUser)
+				}
+				if appErr == nil && user != nil {
+					if appErr = a.AddUserToTeamByInviteIfNeeded(rctx, user, inviteToken, inviteId); appErr != nil {
+						rctx.Logger().Warn("Failed to add user to team", mlog.Err(appErr))
+					}
+				}
+			} else {
+				user, appErr = a.CreateOAuthUser(rctx, service, bytes.NewReader(buf.Bytes()), inviteToken, inviteId, tokenUser)
+			}
 		} else {
 			return nil, appErr
 		}
@@ -828,6 +849,64 @@ func (a *App) LoginByOAuth(rctx request.CTX, service string, userData io.Reader,
 	if appErr != nil {
 		return nil, appErr
 	}
+
+	return user, nil
+}
+
+func (a *App) linkGoogleOAuthUser(rctx request.CTX, oauthUser *model.User) (*model.User, *model.AppError) {
+	if oauthUser == nil || oauthUser.AuthService != model.ServiceGoogle || !oauthUser.EmailVerified || oauthUser.Email == "" || oauthUser.GetAuthData() == "" {
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusUnauthorized)
+	}
+
+	user, err := a.Srv().Store().User().GetByEmail(oauthUser.Email)
+	if err != nil {
+		var notFound *store.ErrNotFound
+		if errors.As(err, &notFound) {
+			return nil, nil
+		}
+		rctx.Logger().Error("Could not find an existing account for Google sign-in", mlog.Err(err))
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.parse.app_error", map[string]any{"Service": "Google"}, "", http.StatusInternalServerError).Wrap(err)
+	}
+
+	if user.IsBot || user.DeleteAt != 0 {
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusUnauthorized)
+	}
+
+	if user.AuthService == model.ServiceGoogle {
+		if user.GetAuthData() == oauthUser.GetAuthData() {
+			return user, nil
+		}
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusUnauthorized)
+	}
+
+	if user.AuthService != "" && user.AuthService != model.UserAuthServiceEmail {
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusUnauthorized)
+	}
+	if user.AuthData != nil && *user.AuthData != "" {
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusUnauthorized)
+	}
+
+	if appErr := a.RevokeAllSessions(rctx, user.Id); appErr != nil {
+		return nil, appErr
+	}
+	if _, err = a.Srv().Store().User().UpdateAuthData(user.Id, model.ServiceGoogle, oauthUser.AuthData, user.Email, true); err != nil {
+		rctx.Logger().Error("Could not link the existing account to Google sign-in", mlog.Err(err))
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.not_available.app_error", map[string]any{"Service": "Google"}, "", http.StatusConflict).Wrap(err)
+	}
+
+	user.AuthData = oauthUser.AuthData
+	user.AuthService = model.ServiceGoogle
+	user.Password = ""
+	user.EmailVerified = true
+	user.FirstName = oauthUser.Email
+	user.LastName = ""
+	updatedUsers, err := a.Srv().Store().User().Update(rctx, user, true)
+	if err != nil {
+		rctx.Logger().Error("Could not save the linked Google account profile", mlog.Err(err))
+		return nil, model.NewAppError("LoginByOAuth", "api.user.login_by_oauth.parse.app_error", map[string]any{"Service": "Google"}, "", http.StatusInternalServerError).Wrap(err)
+	}
+	user = updatedUsers.New
+	a.InvalidateCacheForUser(user.Id)
 
 	return user, nil
 }

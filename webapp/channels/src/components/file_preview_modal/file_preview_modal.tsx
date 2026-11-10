@@ -24,6 +24,7 @@ import * as Utils from 'utils/utils';
 
 import type {FilePreviewComponent} from 'types/store/plugins';
 
+import DocumentPreview, {isDocumentPreviewFile} from './document_preview';
 import FilePreviewModalFooter from './file_preview_modal_footer/file_preview_modal_footer';
 import FilePreviewModalHeader from './file_preview_modal_header/file_preview_modal_header';
 import ImagePreview from './image_preview';
@@ -641,6 +642,16 @@ export default class FilePreviewModal extends React.PureComponent<Props, State> 
                             handleZoomIn={this.handleZoomIn}
                             handleZoomOut={this.handleZoomOut}
                             handleZoomReset={this.handleZoomReset}
+                        />
+                    );
+                } else if (isFileInfo(fileInfo) && isDocumentPreviewFile(fileInfo)) {
+                    canCopyContent = true;
+                    content = (
+                        <DocumentPreview
+                            key={fileInfo.id}
+                            fileInfo={fileInfo}
+                            fileUrl={fileUrl}
+                            getContent={this.getContent}
                         />
                     );
                 } else if (hasSupportedLanguage(fileInfo)) {

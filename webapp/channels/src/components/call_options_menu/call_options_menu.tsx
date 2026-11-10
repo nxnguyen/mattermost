@@ -76,7 +76,7 @@ const CallOptionsMenu = ({
                         <span>
                             <FormattedMessage
                                 id='call_options.audio_sub'
-                                defaultMessage='Mattermost Call'
+                                defaultMessage='Amobi Collab Call'
                             />
                         </span>
                     </>

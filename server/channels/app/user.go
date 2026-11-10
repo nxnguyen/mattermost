@@ -25,6 +25,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/shared/request"
 	"github.com/mattermost/mattermost/server/v8/channels/app/email"
 	"github.com/mattermost/mattermost/server/v8/channels/app/imaging"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 	"github.com/mattermost/mattermost/server/v8/channels/app/password/hashers"
 	"github.com/mattermost/mattermost/server/v8/channels/app/users"
 	"github.com/mattermost/mattermost/server/v8/channels/store"
@@ -142,6 +143,10 @@ func (a *App) CreateUserWithToken(rctx request.CTX, user *model.User, token *mod
 // This function handles the passwordless "guest magic link" flow where clicking an email link logs the user in.
 // Follows the same pattern as SAML/OAuth SSO by creating the user then calling AddUserToTeamByToken.
 func (a *App) AuthenticateUserForGuestMagicLink(rctx request.CTX, tokenString string) (*model.User, *model.AppError) {
+	if oauthgoogle.IsGoogleOnlyMode(a.Config()) {
+		return nil, model.NewAppError("AuthenticateUserForGuestMagicLink", "api.user.login.guest_magic_link.disabled.error", nil, "", http.StatusUnauthorized)
+	}
+
 	// Atomically consume the token to prevent race conditions where concurrent
 	// requests could reuse the same single-use token to create multiple sessions.
 	// Try both valid token types for guest magic links.
@@ -308,6 +313,10 @@ func (a *App) CreateUserFromSignup(rctx request.CTX, user *model.User, redirect 
 }
 
 func (a *App) IsUserSignUpAllowed() *model.AppError {
+	if oauthgoogle.IsGoogleOnlyMode(a.Config()) {
+		return model.NewAppError("IsUserSignUpAllowed", "api.user.create_user.signup_email_disabled.app_error", nil, "", http.StatusNotImplemented)
+	}
+
 	if !*a.Config().EmailSettings.EnableSignUpWithEmail || !*a.Config().TeamSettings.EnableUserCreation {
 		err := model.NewAppError("IsUserSignUpAllowed", "api.user.create_user.signup_email_disabled.app_error", nil, "", http.StatusNotImplemented)
 		return err

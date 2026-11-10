@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost/server/public/model"
+	oauthgoogle "github.com/mattermost/mattermost/server/v8/channels/app/oauthproviders/google"
 )
 
 func TestCWSLogin(t *testing.T) {
@@ -140,6 +141,41 @@ func TestGetUserForLogin(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, appErr.StatusCode)
 		require.Nil(t, user)
 	})
+
+}
+
+func TestGoogleOnlyModeBlocksOtherAuthenticationMethods(t *testing.T) {
+	t.Setenv(oauthgoogle.AllowedEmailsEnv, "nguyennx@bachasoft.com")
+	t.Setenv(oauthgoogle.GoogleOnlyModeEnv, "true")
+	th := Setup(t).InitBasic(t)
+	th.UpdateConfig(t, func(config *model.Config) {
+		config.EmailSettings.EnableSignInWithEmail = new(true)
+		config.EmailSettings.EnableSignInWithUsername = new(true)
+		config.EmailSettings.EnableSignUpWithEmail = new(true)
+		config.GoogleSettings.Enable = new(true)
+		config.GoogleSettings.Id = new("google-client-id")
+		config.GoogleSettings.Secret = new("google-client-secret")
+		config.GitLabSettings.Enable = new(true)
+		config.GuestAccountsSettings.EnableGuestMagicLink = new(true)
+	})
+
+	user, appErr := th.App.GetUserForLogin(th.Context, "", th.BasicUser.Username)
+	require.Nil(t, user)
+	require.Equal(t, http.StatusUnauthorized, appErr.StatusCode)
+
+	appErr = th.App.IsUserSignUpAllowed()
+	require.Equal(t, http.StatusNotImplemented, appErr.StatusCode)
+
+	_, appErr = th.App.AuthenticateUserForGuestMagicLink(th.Context, "unused-test-token")
+	require.Equal(t, http.StatusUnauthorized, appErr.StatusCode)
+
+	provider, appErr := th.App.getSSOProvider(model.ServiceGitlab)
+	require.Nil(t, provider)
+	require.Equal(t, http.StatusUnauthorized, appErr.StatusCode)
+
+	provider, appErr = th.App.getSSOProvider(model.ServiceGoogle)
+	require.Nil(t, appErr)
+	require.NotNil(t, provider)
 }
 
 func TestDoLoginVoIPDeviceId(t *testing.T) {

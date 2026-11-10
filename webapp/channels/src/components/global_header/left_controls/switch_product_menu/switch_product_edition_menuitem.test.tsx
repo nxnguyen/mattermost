@@ -50,7 +50,7 @@ describe('ProductSwitcherEditionFooter', () => {
         expect(screen.queryByText('ENTRY EDITION')).not.toBeInTheDocument();
     });
 
-    test("should show when it's unlicensed", () => {
+    test("should omit upstream edition marketing when unlicensed", () => {
         const state = {
             entities: {
                 ...initialState.entities,
@@ -60,11 +60,11 @@ describe('ProductSwitcherEditionFooter', () => {
 
         renderWithContext(<ProductSwitcherEditionFooter/>, state);
 
-        expect(screen.getByText('TEAM EDITION')).toBeInTheDocument();
-        expect(screen.getByText(/unsupported/)).toBeInTheDocument();
+        expect(screen.queryByText('TEAM EDITION')).not.toBeInTheDocument();
+        expect(screen.queryByText(/unsupported/)).not.toBeInTheDocument();
     });
 
-    test("should show when it's licensed with entry SKU", () => {
+    test("should omit upstream edition marketing with an Entry license", () => {
         const state = {
             entities: {
                 ...initialState.entities,
@@ -79,6 +79,6 @@ describe('ProductSwitcherEditionFooter', () => {
 
         renderWithContext(<ProductSwitcherEditionFooter/>, state);
 
-        expect(screen.getByText('ENTRY EDITION')).toBeInTheDocument();
+        expect(screen.queryByText('ENTRY EDITION')).not.toBeInTheDocument();
     });
 });

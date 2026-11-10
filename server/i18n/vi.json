@@ -14568,5 +14568,9 @@
   {
     "id": "model.user.is_valid.mention_keys.app_error",
     "translation": "mention_keys không hợp lệ: vượt quá giới hạn {{.MaxCount}} khóa hoặc {{.MaxLength}} byte."
+  },
+  {
+    "id": "api.user.login_by_oauth.google_email_not_allowed.app_error",
+    "translation": "Email Google này chưa có trong danh sách được phép đăng nhập Amobi Collab. Vui lòng dùng tài khoản đã được cấp quyền hoặc liên hệ quản trị viên để được thêm vào danh sách."
   }
 ]

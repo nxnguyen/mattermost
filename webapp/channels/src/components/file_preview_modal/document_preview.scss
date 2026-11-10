@@ -1,0 +1,53 @@
+.document-preview {
+    display: flex;
+    overflow: hidden;
+    width: min(1100px, calc(100vw - 48px));
+    height: 78vh;
+    flex-direction: column;
+    border-radius: 8px;
+    background: var(--center-channel-bg);
+    color: var(--center-channel-color);
+
+    &__toolbar {
+        display: flex;
+        flex-shrink: 0;
+        padding: 8px 16px;
+        border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+        gap: 8px;
+
+        button[aria-pressed='true'] {
+            background: rgba(var(--button-bg-rgb), 0.12);
+        }
+    }
+
+    &__html {
+        width: 100%;
+        min-height: 0;
+        flex: 1;
+        border: 0;
+        background: #fff;
+    }
+
+    &__markdown,
+    &__source {
+        overflow: auto;
+        min-height: 0;
+        flex: 1;
+        padding: 24px;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    &__source {
+        border: 0;
+        border-radius: 0;
+        background: var(--center-channel-bg);
+        color: var(--center-channel-color);
+        white-space: pre-wrap;
+    }
+
+    &__error {
+        color: var(--center-channel-color);
+        text-align: center;
+    }
+}

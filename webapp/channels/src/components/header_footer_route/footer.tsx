@@ -14,6 +14,8 @@ const Footer = () => {
     const {formatMessage} = useIntl();
 
     const {AboutLink, PrivacyPolicyLink, TermsOfServiceLink, HelpLink} = useSelector(getConfig);
+    // The upstream default is not Amobi's policy. Show terms once an Amobi URL is configured.
+    const termsLink = TermsOfServiceLink === 'https://mattermost.com/pl/terms-of-use/' ? '' : TermsOfServiceLink;
 
     // Check if MMEMBED cookie is set and if so, don't show the footer
     if (document.cookie.includes('MMEMBED=1')) {
@@ -30,7 +32,7 @@ const Footer = () => {
                 className='footer-copyright'
                 data-testid='footer-copyright'
             >
-                {`© ${new Date().getFullYear()} Mattermost Inc.`}
+                {`© ${new Date().getFullYear()} Amobi Collab`}
             </span>
             {AboutLink && (
                 <ExternalLink
@@ -52,11 +54,11 @@ const Footer = () => {
                     {formatMessage({id: 'web.footer.privacy', defaultMessage: 'Privacy Policy'})}
                 </ExternalLink>
             )}
-            {TermsOfServiceLink && (
+            {termsLink && (
                 <ExternalLink
                     key='footer-link-terms'
                     className='footer-link'
-                    href={TermsOfServiceLink}
+                    href={termsLink}
                     location='footer'
                 >
                     {formatMessage({id: 'web.footer.terms', defaultMessage: 'Terms'})}

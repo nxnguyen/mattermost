@@ -8483,5 +8483,10 @@
   "yourcomputer": "Máy tính của bạn",
   "youtube_video.play.aria_label": "Phát {videoTitle} trên YouTube",
   "youtube_video.play_button.aria_label": "Phát video",
-  "youtube_video.thumbnail.alt_text": "Hình thu nhỏ của {videoTitle} trên YouTube"
+  "youtube_video.thumbnail.alt_text": "Hình thu nhỏ của {videoTitle} trên YouTube",
+  "amobi.about.description": "Trò chuyện, quản lý dự án và cộng tác trong cùng một nơi.",
+  "amobi.about.copyright": "Amobi Collab · {currentYear}",
+  "amobi.about.notices": "Giấy phép và ghi công phần mềm nguồn mở",
+  "amobi.about.notice": "Amobi Collab sử dụng phần mềm nguồn mở cho <linkServer>máy chủ</linkServer>, ứng dụng <linkDesktop>máy tính</linkDesktop> và <linkMobile>di động</linkMobile>.",
+  "amobi.onboarding.welcome": "Chào mừng đến với Amobi Collab"
 }

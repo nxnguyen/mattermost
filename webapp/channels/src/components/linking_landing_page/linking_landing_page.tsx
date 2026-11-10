@@ -13,7 +13,7 @@ import ExternalLink from 'components/external_link';
 
 import desktopImg from 'images/deep-linking/deeplinking-desktop-img.png';
 import mobileImg from 'images/deep-linking/deeplinking-mobile-img.png';
-import MattermostLogoSvg from 'images/logo.svg';
+import MattermostLogoSvg from 'images/amobi-collab.png';
 import {navigateTo} from 'utils/browser_utils';
 import {LandingPreferenceTypes} from 'utils/constants';
 
@@ -319,7 +319,7 @@ export default class LinkingLandingPage extends PureComponent<Props, State> {
         let openingLink = (
             <FormattedMessage
                 id='get_app.openingLink'
-                defaultMessage='Opening link in Mattermost...'
+                defaultMessage='Opening link in Amobi Collab...'
             />
         );
         if (this.props.enableCustomBrand) {
@@ -328,7 +328,7 @@ export default class LinkingLandingPage extends PureComponent<Props, State> {
                     id='get_app.openingLinkWhiteLabel'
                     defaultMessage='Opening link in {appName}...'
                     values={{
-                        appName: this.props.siteName || 'Mattermost',
+                    appName: this.props.siteName || 'Amobi Collab',
                     }}
                 />
             );
@@ -363,7 +363,7 @@ export default class LinkingLandingPage extends PureComponent<Props, State> {
                 id='get_app.ifNothingPrompts'
                 defaultMessage='You can view {siteName} in the desktop app or continue in your web browser.'
                 values={{
-                    siteName: this.props.enableCustomBrand ? '' : ' Mattermost',
+                    siteName: this.props.enableCustomBrand ? '' : ' Amobi Collab',
                 }}
             />
         );
@@ -373,7 +373,7 @@ export default class LinkingLandingPage extends PureComponent<Props, State> {
                     id='get_app.ifNothingPromptsMobile'
                     defaultMessage='You can view {siteName} in the mobile app or continue in your web browser.'
                     values={{
-                        siteName: this.props.enableCustomBrand ? '' : ' Mattermost',
+                    siteName: this.props.enableCustomBrand ? '' : ' Amobi Collab',
                     }}
                 />
             );

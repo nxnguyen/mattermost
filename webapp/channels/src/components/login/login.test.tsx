@@ -143,6 +143,30 @@ describe('components/login/Login', () => {
         expect(screen.queryByText('Log in to your account')).toBeVisible();
     });
 
+    it('should offer Google login when password sign-in and account creation are disabled', () => {
+        const state = mergeObjects(baseState, {
+            entities: {
+                general: {
+                    config: {
+                        EnableSignInWithEmail: 'false',
+                        EnableSignInWithUsername: 'false',
+                        EnableUserCreation: 'false',
+                        EnableSignUpWithGoogle: 'true',
+                    },
+                },
+            },
+        });
+
+        renderWithContext(
+            <Login/>,
+            state,
+        );
+
+        expect(screen.getByRole('link', {name: 'Google Icon Google'})).toBeVisible();
+        expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+    });
+
     it('should handle session expired', async () => {
         LocalStorageStore.setWasLoggedIn(true);
         (showNotification as jest.Mock).mockReturnValue(() => Promise.resolve({status: 'success', callback: () => {}}));

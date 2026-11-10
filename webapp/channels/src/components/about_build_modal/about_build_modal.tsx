@@ -15,8 +15,6 @@ import ExternalLink from 'components/external_link';
 import Nbsp from 'components/html_entities/nbsp';
 import MattermostLogo from 'components/widgets/icons/mattermost_logo';
 
-import {AboutLinks} from 'utils/constants';
-import {getSkuDisplayName} from 'utils/subscription';
 
 import AboutBuildModalCloud from './about_build_modal_cloud/about_build_modal_cloud';
 
@@ -84,129 +82,11 @@ export default function AboutBuildModal(props: Props) {
         );
     }
 
-    let title = (
+    const subTitle = (
         <FormattedMessage
-            id='about.teamEditiont0'
-            defaultMessage='Team Edition'
+            id='amobi.about.description'
+            defaultMessage='Team chat, projects and collaboration in one place.'
         />
-    );
-
-    let subTitle = (
-        <FormattedMessage
-            id='about.teamEditionSt'
-            defaultMessage='All your team communication in one place, instantly searchable and accessible anywhere.'
-        />
-    );
-
-    let learnMore = (
-        <div>
-            <FormattedMessage
-                id='about.teamEditionLearn'
-                defaultMessage='Join the Mattermost community at '
-            />
-            <ExternalLink
-                location='about_build_modal'
-                href='https://mattermost.com/community/'
-            >
-                {'mattermost.com/community/'}
-            </ExternalLink>
-        </div>
-    );
-
-    let licensee;
-    if (config.BuildEnterpriseReady === 'true') {
-        title = (
-            <FormattedMessage
-                id='about.teamEditiont1'
-                defaultMessage='Enterprise Edition'
-            />
-        );
-
-        subTitle = (
-            <FormattedMessage
-                id='about.enterpriseEditionSt'
-                defaultMessage='Modern communication from behind your firewall.'
-            />
-        );
-
-        if (license.IsLicensed === 'true') {
-            // Show the plan name instead of generic "Enterprise Edition"
-            const skuName = getSkuDisplayName(license.SkuShortName || '', license.IsGovSku === 'true');
-            title = <>{skuName}</>;
-            learnMore = (
-                <div>
-                    <FormattedMessage
-                        id='about.planNameLearn'
-                        defaultMessage='Learn more about Mattermost {planName} at {link}'
-                        values={{
-                            planName: skuName,
-                            link: (
-                                <ExternalLink
-                                    location='about_build_modal'
-                                    href='https://mattermost.com/'
-                                >
-                                    {'mattermost.com'}
-                                </ExternalLink>
-                            ),
-                        }}
-                    />
-                </div>
-            );
-            licensee = (
-                <div className='form-group'>
-                    <FormattedMessage
-                        id='about.licensed'
-                        defaultMessage='Licensed to:'
-                    />
-                    <Nbsp/>{license.Company}
-                </div>
-            );
-        } else {
-            learnMore = (
-                <div>
-                    <FormattedMessage
-                        id='about.enterpriseEditionLearn'
-                        defaultMessage='Learn more about Enterprise Edition at {link}'
-                        values={{
-                            link: (
-                                <ExternalLink
-                                    location='about_build_modal'
-                                    href='https://mattermost.com/'
-                                >
-                                    {'mattermost.com'}
-                                </ExternalLink>
-                            ),
-                        }}
-                    />
-                </div>
-            );
-        }
-    }
-
-    const termsOfService = (
-        <ExternalLink
-            location='about_build_modal'
-            id='tosLink'
-            href={AboutLinks.TERMS_OF_SERVICE}
-        >
-            <FormattedMessage
-                id='about.tos'
-                defaultMessage='Terms of Use'
-            />
-        </ExternalLink>
-    );
-
-    const privacyPolicy = (
-        <ExternalLink
-            id='privacyLink'
-            location='about_build_modal'
-            href={AboutLinks.PRIVACY_POLICY}
-        >
-            <FormattedMessage
-                id='about.privacy'
-                defaultMessage='Privacy Policy'
-            />
-        </ExternalLink>
     );
 
     const getServerVersionString = () => {
@@ -318,7 +198,7 @@ export default function AboutBuildModal(props: Props) {
                     <FormattedMessage
                         id='about.title'
                         values={{
-                            appTitle: config.SiteName || 'Mattermost',
+                            appTitle: config.SiteName || 'Amobi Collab',
                         }}
                         defaultMessage='About {appTitle}'
                     />
@@ -332,7 +212,7 @@ export default function AboutBuildModal(props: Props) {
                     <div>
                         <h3 className='about-modal__title'>
                             <strong>
-                                {'Mattermost'} {title}
+                                {'Amobi Collab'}
                             </strong>
                         </h3>
                         <p className='about-modal__subtitle pb-2'>
@@ -365,38 +245,34 @@ export default function AboutBuildModal(props: Props) {
                             </div>
                             {serverHostname}
                         </div>
-                        {licensee}
                     </div>
                 </div>
                 <div className='about-modal__footer'>
-                    {learnMore}
                     <div className='form-group'>
                         <div className='about-modal__copyright'>
                             <FormattedMessage
-                                id='about.copyright'
-                                defaultMessage='Copyright 2015 - {currentYear} Mattermost, Inc. All rights reserved'
-                                values={{
-                                    currentYear: new Date().getFullYear(),
-                                }}
+                                id='amobi.about.copyright'
+                                defaultMessage='Amobi Collab · {currentYear}'
+                                values={{currentYear: new Date().getFullYear()}}
                             />
                         </div>
                         <div className='about-modal__links'>
-                            {termsOfService}
-                            {' - '}
-                            {privacyPolicy}
+                            <ExternalLink location='about_build_modal' href='/static/amobi-open-source-notices.txt'>
+                                <FormattedMessage id='amobi.about.notices' defaultMessage='Open source licenses and notices'/>
+                            </ExternalLink>
                         </div>
                     </div>
                 </div>
                 <div className='about-modal__notice form-group pt-3'>
                     <p>
                         <FormattedMessage
-                            id='about.notice'
-                            defaultMessage='Mattermost is made possible by the open source software used in our <linkServer>server</linkServer>, <linkDesktop>desktop</linkDesktop> and <linkMobile>mobile</linkMobile> apps.'
+                            id='amobi.about.notice'
+                            defaultMessage='Amobi Collab uses open source software in its <linkServer>server</linkServer>, <linkDesktop>desktop</linkDesktop> and <linkMobile>mobile</linkMobile> apps.'
                             values={{
                                 linkServer: (msg: React.ReactNode) => (
                                     <ExternalLink
                                         location='about_build_modal'
-                                        href='https://github.com/mattermost/mattermost-server/blob/master/NOTICE.txt'
+                                        href='/static/amobi-open-source-notices.txt'
                                     >
                                         {msg}
                                     </ExternalLink>
@@ -404,7 +280,7 @@ export default function AboutBuildModal(props: Props) {
                                 linkDesktop: (msg: React.ReactNode) => (
                                     <ExternalLink
                                         location='about_build_modal'
-                                        href='https://github.com/mattermost/desktop/blob/master/NOTICE.txt'
+                                        href='/static/amobi-open-source-notices.txt'
                                     >
                                         {msg}
                                     </ExternalLink>
@@ -412,7 +288,7 @@ export default function AboutBuildModal(props: Props) {
                                 linkMobile: (msg: React.ReactNode) => (
                                     <ExternalLink
                                         location='about_build_modal'
-                                        href='https://github.com/mattermost/mattermost-mobile/blob/master/NOTICE.txt'
+                                        href='/static/amobi-open-source-notices.txt'
                                     >
                                         {msg}
                                     </ExternalLink>
